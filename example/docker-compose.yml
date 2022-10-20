@@ -1,0 +1,54 @@
+version: '2'
+
+services:
+  mariadb:
+    image: docker.io/bitnami/mariadb:10.3
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=no
+      - MARIADB_USER=demo
+      - MARIADB_PASSWORD=62c5922f25ea16a2
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_ROOT_PASSWORD=ootr
+      - MARIADB_DATABASE=demo
+    volumes:
+      - './store:/bitnami/mariadb' #keeps the data after the application turns off
+      - './my-project/demo.sql:/docker-entrypoint-initdb.d/demo.sql' #atttempt sql initialisation failed rn
+    networks:
+      - mynet
+  myapp:
+    image: docker.io/bitnami/codeigniter:3.1.11
+    ports:
+      - '8000:8000'
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=no
+      - CODEIGNITER_DATABASE_HOST=mariadb
+      - CODEIGNITER_DATABASE_PORT_NUMBER=3306
+      - CODEIGNITER_DATABASE_USER=demo
+      - CODEIGNITER_DATABASE_PASSWORD=62c5922f25ea16a2
+      - CODEIGNITER_DATABASE_NAME=demo
+    volumes:
+      - './my-project:/app'
+    depends_on:
+      - mariadb
+    networks:
+      - mynet
+  phpmyadmin:
+    image: docker.io/bitnami/phpmyadmin:5
+    environment:
+      - DATABASE_PORT_NUMBER=3306
+    ports:
+      - '80:8080'
+      - '443:8443'
+    depends_on:
+      - mariadb
+      - myapp
+    networks:
+      - mynet
+volumes:
+  mariadb_data:
+    driver: local
+networks:
+  mynet:
+    driver: bridge
